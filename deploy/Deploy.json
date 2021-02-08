@@ -19,9 +19,24 @@
                     "Standard_RAGRS",
                     "Premium_LRS"
                 ],
-                    "defaultValue": "Standard_LRS",
+                    "defaultValue": "Standard_RAGRS",
                         "metadata": {
                 "description": "The type of replication to use for the storage account."
+            }
+        },
+        "sqlUsername": {
+            "type": "string",
+                "maxLength": 128,
+                    "defaultValue": "sqladminuser",
+                        "metadata": {
+                "description": "The sql server admin username."
+            }
+        },
+         "sqlPassword": {
+            "type": "securestring",
+                "maxLength": 128,
+                        "metadata": {
+                "description": "The sql server admin password."
             }
         }
     },
@@ -67,7 +82,7 @@
                 {
                   "type": "blobServices/containers",
                   "apiVersion": "2019-06-01",
-                  "name": "default/deploy",
+                  "name": "default/synapseadls",
                   "dependsOn": [
                     "[variables('storageName')]"
                   ]
@@ -91,9 +106,10 @@
                 },
                 "defaultDataLakeStorage": {
                     "accountUrl": "[concat('https://',variables('storageName'),'.dfs.core.windows.net')]",
-                    "filesystem": "deploy"
+                    "filesystem": "synapseadls"
                 },
-                "sqlAdministratorLogin": "sqladminuser",
+                "sqlAdministratorLogin": "[parameters('sqlUsername')]",
+                "sqlAdministratorLoginPassword": "[parameters('sqlPassword')]",
                 "privateEndpointConnections": [],
                 "encryption": {}
             }
@@ -129,5 +145,15 @@
                 "endIpAddress": "255.255.255.255"
             }
         }
-    ]
+    ],
+    "outputs": {
+        "synapseName": {
+          "type": "string",
+          "value": "[variables('synapseName')]"
+        },
+        "storageName": {
+          "type": "string",
+          "value": "[variables('storageName')]"
+        }
+      }
 }
