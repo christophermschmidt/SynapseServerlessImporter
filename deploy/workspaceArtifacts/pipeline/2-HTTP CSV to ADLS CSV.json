@@ -1,0 +1,149 @@
+{
+	"name": "2-HTTP CSV to ADLS CSV",
+	"properties": {
+		"activities": [
+			{
+				"name": "LKP HTTP FIlelist",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_ADLS_CSV_Generic",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": "synapseadls",
+							"filepath": "config",
+							"filename": "Import-HTTP.csv"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FE HTTP File",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LKP HTTP FIlelist",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LKP HTTP FIlelist').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CP HTTP CSV to ADLS CSV",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "InputURL",
+									"value": "@item().URIPath"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_HTTP_CSV_Generic",
+									"type": "DatasetReference",
+									"parameters": {
+										"fileurl": {
+											"value": "@item().URIPath",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_ADLS_CSV_Generic",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": "synapseadls",
+										"filepath": {
+											"value": "raw/@{item().RawFolderDestination}",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@substring(item().URIPath,lastIndexOf(item().URIPath,'/'),sub(length(item().URIPath),lastIndexOf(item().URIPath,'/')))",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "2- Source Data to ADLS"
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-02-04T20:24:09Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

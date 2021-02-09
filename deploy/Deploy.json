@@ -1,0 +1,159 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourcesBasePrefix": {
+            "type": "string",
+                "maxLength": 8,
+                    "defaultValue": "ssi",
+                        "metadata": {
+                "description": "The value to use for prefix for resources. Use only lowercase letters and numbers."
+            }
+        },
+        "storageSKU": {
+            "type": "string",
+                "allowedValues": [
+                    "Standard_LRS",
+                    "Standard_ZRS",
+                    "Standard_GRS",
+                    "Standard_RAGRS",
+                    "Premium_LRS"
+                ],
+                    "defaultValue": "Standard_RAGRS",
+                        "metadata": {
+                "description": "The type of replication to use for the storage account."
+            }
+        },
+        "sqlUsername": {
+            "type": "string",
+                "maxLength": 128,
+                    "defaultValue": "sqladminuser",
+                        "metadata": {
+                "description": "The sql server admin username."
+            }
+        },
+         "sqlPassword": {
+            "type": "securestring",
+                "maxLength": 128,
+                        "metadata": {
+                "description": "The sql server admin password."
+            }
+        }
+    },
+    "variables": {
+        "storageName" : "[concat(toLower(parameters('resourcesBasePrefix')),'storage', substring(uniqueString(resourceGroup().id),0,5))]",
+        "synapseName": "[concat(toLower(parameters('resourcesBasePrefix')),'synapse', substring(uniqueString(resourceGroup().id),0,5))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[variables('storageName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('storageSKU')]"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "isHnsEnabled": true,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            },
+            "resources": [
+                {
+                  "type": "blobServices/containers",
+                  "apiVersion": "2019-06-01",
+                  "name": "default/synapseadls",
+                  "dependsOn": [
+                    "[variables('storageName')]"
+                  ]
+                }
+              ]
+        },
+        {
+            "type": "Microsoft.Synapse/workspaces",
+            "apiVersion": "2019-06-01-preview",
+            "name": "[variables('synapseName')]",
+            "location": "southcentralus",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "connectivityEndpoints": {
+                    "web": "[concat('https://web.azuresynapse.net?workspace=%2fsubscriptions%2f',subscription().subscriptionId,'%2fresourceGroups%2f',resourceGroup().name,'%2fproviders%2fMicrosoft.Synapse%2fworkspaces%2f', variables('synapseName'))]",
+                    "dev": "[concat('https://', variables('synapseName'), '.dev.azuresynapse.net')]",
+                    "sqlOnDemand": "[concat(variables('synapseName'), '-ondemand.sql.azuresynapse.net')]",
+                    "sql": "[concat(variables('synapseName'), '.sql.azuresynapse.net')]"
+                },
+                "defaultDataLakeStorage": {
+                    "accountUrl": "[concat('https://',variables('storageName'),'.dfs.core.windows.net')]",
+                    "filesystem": "synapseadls"
+                },
+                "sqlAdministratorLogin": "[parameters('sqlUsername')]",
+                "sqlAdministratorLoginPassword": "[parameters('sqlPassword')]",
+                "privateEndpointConnections": [],
+                "encryption": {}
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[concat(variables('storageName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]"
+            ],
+            "sku": {
+                "name": "[parameters('storageSKU')]"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Synapse/workspaces/firewallRules",
+            "apiVersion": "2019-06-01-preview",
+            "name": "[concat(variables('synapseName'), '/allowAll')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Synapse/workspaces', variables('synapseName'))]"
+            ],
+            "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "255.255.255.255"
+            }
+        }
+    ],
+    "outputs": {
+        "synapseName": {
+          "type": "string",
+          "value": "[variables('synapseName')]"
+        },
+        "storageName": {
+          "type": "string",
+          "value": "[variables('storageName')]"
+        }
+      }
+}
