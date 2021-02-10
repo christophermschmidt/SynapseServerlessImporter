@@ -10,7 +10,7 @@ $serverlessDatabaseName = "synapseServerless"           #Name of Synapse Servles
 #Connect-AzAccount
 
 #set subscription context
-Get-AzSubscription -SubscriptionName $subscriptionName | Select-AzSubscription
+$sub = Get-AzSubscription -SubscriptionName $subscriptionName | Select-AzSubscription
 
 #verify RG does not exist
 $RGnotExist = 0
@@ -32,9 +32,20 @@ $passwd= $cred.getNetworkCredential().Password
 #set working directory
 Set-Location $dir
 
+#set access policy for Azure Key Vault for user
+$userObjectID = (Get-AzADUser -UserPrincipalName (Get-AzContext).Account).Id
+$akvPol = '[ { "objectId": "#USERID#", "tenantId": "#TENANTID#", "permissions": { "keys": [ "Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore" ], "secrets": [ "Get", "List", "Set", "Delete", "Recover", "Backup", "Restore" ], "certificates": [ "Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "ManageContacts", "ManageIssuers", "GetIssuers", "ListIssuers", "SetIssuers", "DeleteIssuers" ] }, "applicationId": "" } ]'
+$akvPol.Replace("#USERID#",$userObjectID)
+$akvPol.Replace("#TENANTID#",$sub.TentantID)
+
 #Deploy Workspace + Storage
-$ARMoutput = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile Deploy.json -resourcesBasePrefix $resourceNamePrefix -sqlUsername $username -sqlPassword $cred.Password
-Write-Output "Storage and Synapse accounts created, uploading supporting files to Synapse now"
+$ARMoutput = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile Deploy.json -resourcesBasePrefix $resourceNamePrefix -sqlUsername $username -sqlPassword $cred.Password -akvAccessPolicies $akvPol
+Write-Output "Storage and Synapse accounts created"
+
+#Get Synapse Workspace managed identity
+$synapseMI = (Get-AzSynapseWorkspace -ResourceGroupName $resourceGroupName).Identity
+#add access policy for Synapse to AKV
+Set-AzKeyVaultAccessPolicy -VaultName $($ARMoutput.Outputs.keyVaultName.Value) -ObjectId $synapseMI -PermissionsToSecrets ["Get"]
 
 #upload files to container
 #$ctx = New-AzStorageContext -StorageAccountName $ARMoutput.Outputs.storageName -UseConnectedAccount
@@ -64,7 +75,7 @@ $dbConn.Close()
 $ConnectionStringServerless = "Server=$($ARMoutput.Outputs.synapseName.Value)-ondemand.sql.azuresynapse.net;Database=$serverlessDatabaseName;User ID=$username;Password=$passwd"
 
 $SSmaster = ConvertTo-SecureString -String $ConnectionStringMaster -AsPlainText -Force
-$SSserverleess = ConvertTo-SecureString -String $ConnectionStringServerless -AsPlainText -Force
+$SSserverless = ConvertTo-SecureString -String $ConnectionStringServerless -AsPlainText -Force
 
-#run the ARM Template for the Workspace pipelines
-$storageURL = "https://$($ARMoutput.Outputs.storageName.Value).dfs.core.windows.net"
+#add key vault secret for Serverless DB
+Set-AzKeyVaultSecret -VaultName $($ARMoutput.Outputs.keyVaultName.Value) -Name "SSI-ServerlessDB" -SecretValue $SSserverless

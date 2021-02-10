@@ -38,11 +38,15 @@
                         "metadata": {
                 "description": "The sql server admin password."
             }
+        },
+        "akvAccessPolicies": {
+            "type": "array"
         }
     },
     "variables": {
         "storageName" : "[concat(toLower(parameters('resourcesBasePrefix')),'storage', substring(uniqueString(resourceGroup().id),0,5))]",
-        "synapseName": "[concat(toLower(parameters('resourcesBasePrefix')),'synapse', substring(uniqueString(resourceGroup().id),0,5))]"
+        "synapseName": "[concat(toLower(parameters('resourcesBasePrefix')),'synapse', substring(uniqueString(resourceGroup().id),0,5))]",
+        "keyvaultName": "[concat(toLower(parameters('resourcesBasePrefix')),'akv', substring(uniqueString(resourceGroup().id),0,5))]",
     },
     "resources": [
         {
@@ -93,7 +97,7 @@
             "type": "Microsoft.Synapse/workspaces",
             "apiVersion": "2019-06-01-preview",
             "name": "[variables('synapseName')]",
-            "location": "southcentralus",
+            "location": "[resourceGroup().location]",
             "identity": {
                 "type": "SystemAssigned"
             },
@@ -144,6 +148,34 @@
                 "startIpAddress": "0.0.0.0",
                 "endIpAddress": "255.255.255.255"
             }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2018-02-14",
+            "name": "[parameters('name')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "tags": {},
+            "properties": {
+                "enabledForDeployment": false,
+                "enabledForTemplateDeployment": true,
+                "enabledForDiskEncryption": false,
+                "enableRbacAuthorization": false,
+                "accessPolicies": "[parameters('akvAccessPolicies')]",
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                },
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": "90",
+                "networkAcls": {
+                    "defaultAction": "allow",
+                    "bypass": "AzureServices",
+                    "ipRules": [],
+                    "virtualNetworkRules": []
+                }
+            }
         }
     ],
     "outputs": {
@@ -154,6 +186,10 @@
         "storageName": {
           "type": "string",
           "value": "[variables('storageName')]"
-        }
+        },
+        "keyvaultName": {
+            "type": "string",
+            "value": "[variables('keyvaultName')]"
+          }
       }
 }
