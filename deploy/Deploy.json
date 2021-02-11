@@ -39,8 +39,8 @@
                 "description": "The sql server admin password."
             }
         },
-        "akvAccessPolicies": {
-            "type": "array"
+        "akvUser": {
+            "type": "string"
         }
     },
     "variables": {
@@ -152,7 +152,7 @@
         {
             "type": "Microsoft.KeyVault/vaults",
             "apiVersion": "2018-02-14",
-            "name": "[parameters('name')]",
+            "name": "[variables('keyvaultName')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [],
             "tags": {},
@@ -161,7 +161,34 @@
                 "enabledForTemplateDeployment": true,
                 "enabledForDiskEncryption": false,
                 "enableRbacAuthorization": false,
-                "accessPolicies": "[parameters('akvAccessPolicies')]",
+                "accessPolicies": [
+                    {
+                      "tenantId": "[subscription().tenantId]",
+                      "objectId": "[parameters('akvUser')]",
+                      "permissions": {
+                        "keys": [
+                            "get",
+                            "list",
+                            "update",
+                            "create",
+                            "import",
+                            "delete",
+                            "recover",
+                            "backup",
+                            "restore"
+                        ],
+                        "secrets": [
+                            "get",
+                            "set",
+                            "list",
+                            "delete",
+                            "recover",
+                            "backup",
+                            "restore"
+                        ]
+                      }
+                    }
+                  ],
                 "tenantId": "[subscription().tenantId]",
                 "sku": {
                     "name": "standard",

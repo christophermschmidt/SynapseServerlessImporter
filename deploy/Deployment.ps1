@@ -1,16 +1,16 @@
 ﻿#configurations - FILL OUT WITH DESIRED VALUES
 $dir = "C:\GitHub\SynapseServerlessImporter\deploy"     #Working directory of where your Deployment.ps1 file is located
-$resourceGroupName = "ssi-rg-test2"                     #Name of Azure resource group to deploy the lab resrouces to, will create if it does not exist
+$resourceGroupName = "ssi-rg-test5"                     #Name of Azure resource group to deploy the lab resrouces to, will create if it does not exist
 $location = "East US 2"                                 #Geo location of resource group, resources will use this as well
 $resourceNamePrefix = "ssi"                             #prefix to append on to unique names such as Synapse Workspace and Storage account
-$subscriptionName = "MS Internal Sandbox"               #Name of subscription to use for deployment (in case you want to deploy not to your default subscription)
+$subscriptionName = "Visual Studio Premium with MSDN"               #Name of subscription to use for deployment (in case you want to deploy not to your default subscription)
 $serverlessDatabaseName = "synapseServerless"           #Name of Synapse Servless Pool
 
 #Sign-in
-#Connect-AzAccount
+#Connect-AzAccount -UseDeviceAuthentication
 
 #set subscription context
-$sub = Get-AzSubscription -SubscriptionName $subscriptionName | Select-AzSubscription
+$ctx = Get-AzContext
 
 #verify RG does not exist
 $RGnotExist = 0
@@ -33,19 +33,23 @@ $passwd= $cred.getNetworkCredential().Password
 Set-Location $dir
 
 #set access policy for Azure Key Vault for user
-$userObjectID = (Get-AzADUser -UserPrincipalName (Get-AzContext).Account).Id
-$akvPol = '[ { "objectId": "#USERID#", "tenantId": "#TENANTID#", "permissions": { "keys": [ "Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore" ], "secrets": [ "Get", "List", "Set", "Delete", "Recover", "Backup", "Restore" ], "certificates": [ "Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "ManageContacts", "ManageIssuers", "GetIssuers", "ListIssuers", "SetIssuers", "DeleteIssuers" ] }, "applicationId": "" } ]'
-$akvPol.Replace("#USERID#",$userObjectID)
-$akvPol.Replace("#TENANTID#",$sub.TentantID)
+$user = Get-AzADUser -Mail $ctx.Account.id
+if (-not $user) {  #Try UPN
+    $user = Get-AzADUser -UserPrincipalName $ctx.Account.Id
+}
+if (-not $user) { #User was not found by mail or UPN, try MailNick
+    $mail = ($ctx.Account.id -replace "@","_" ) + "#EXT#"
+    $user = Get-AzADUser | Where-Object { $_.MailNickName -eq $mail}
+}
 
 #Deploy Workspace + Storage
-$ARMoutput = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile Deploy.json -resourcesBasePrefix $resourceNamePrefix -sqlUsername $username -sqlPassword $cred.Password -akvAccessPolicies $akvPol
+$ARMoutput = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile Deploy.json -resourcesBasePrefix $resourceNamePrefix -sqlUsername $username -sqlPassword $cred.Password -akvUser $user.Id
 Write-Output "Storage and Synapse accounts created"
 
 #Get Synapse Workspace managed identity
 $synapseMI = (Get-AzSynapseWorkspace -ResourceGroupName $resourceGroupName).Identity
 #add access policy for Synapse to AKV
-Set-AzKeyVaultAccessPolicy -VaultName $($ARMoutput.Outputs.keyVaultName.Value) -ObjectId $synapseMI -PermissionsToSecrets ["Get"]
+Set-AzKeyVaultAccessPolicy -VaultName $($ARMoutput.Outputs.keyvaultName.Value) -ObjectId $synapseMI.PrincipalId -PermissionsToSecrets "get"
 
 #upload files to container
 #$ctx = New-AzStorageContext -StorageAccountName $ARMoutput.Outputs.storageName -UseConnectedAccount
@@ -78,4 +82,4 @@ $SSmaster = ConvertTo-SecureString -String $ConnectionStringMaster -AsPlainText 
 $SSserverless = ConvertTo-SecureString -String $ConnectionStringServerless -AsPlainText -Force
 
 #add key vault secret for Serverless DB
-Set-AzKeyVaultSecret -VaultName $($ARMoutput.Outputs.keyVaultName.Value) -Name "SSI-ServerlessDB" -SecretValue $SSserverless
+Set-AzKeyVaultSecret -VaultName $($ARMoutput.Outputs.keyvaultName.Value) -Name "SSI-ServerlessDB" -SecretValue $SSserverless
