@@ -4,7 +4,7 @@
 		"annotations": [],
 		"type": "AzureBlobFS",
 		"typeProperties": {
-			"url": "https://#ADLSURL#.dfs.core.windows.net"
+			"url": "https://ssistorageovatk.dfs.core.windows.net"
 		},
 		"connectVia": {
 			"referenceName": "AutoResolveIntegrationRuntime",

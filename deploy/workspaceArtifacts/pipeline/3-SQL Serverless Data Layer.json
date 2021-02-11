@@ -1,5 +1,5 @@
 {
-	"name": "3- SQL Serverless Data Layer",
+	"name": "3-SQL Serverless Data Layer",
 	"properties": {
 		"description": "Process Raw CSV files into Refined layer via Serverless DB external tables",
 		"activities": [

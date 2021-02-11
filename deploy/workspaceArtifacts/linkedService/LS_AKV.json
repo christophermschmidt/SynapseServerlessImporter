@@ -1,0 +1,11 @@
+{
+	"name": "LS_AKV",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://#AKVURL#.vault.azure.net/"
+		}
+	}
+}
+

@@ -4,49 +4,54 @@
     "parameters": {
         "resourcesBasePrefix": {
             "type": "string",
-                "maxLength": 8,
-                    "defaultValue": "ssi",
-                        "metadata": {
+            "maxLength": 8,
+            "defaultValue": "ssi",
+            "metadata": {
                 "description": "The value to use for prefix for resources. Use only lowercase letters and numbers."
             }
         },
         "storageSKU": {
             "type": "string",
-                "allowedValues": [
-                    "Standard_LRS",
-                    "Standard_ZRS",
-                    "Standard_GRS",
-                    "Standard_RAGRS",
-                    "Premium_LRS"
-                ],
-                    "defaultValue": "Standard_RAGRS",
-                        "metadata": {
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ],
+            "defaultValue": "Standard_RAGRS",
+            "metadata": {
                 "description": "The type of replication to use for the storage account."
             }
         },
         "sqlUsername": {
             "type": "string",
-                "maxLength": 128,
-                    "defaultValue": "sqladminuser",
-                        "metadata": {
+            "maxLength": 128,
+            "defaultValue": "sqladminuser",
+            "metadata": {
                 "description": "The sql server admin username."
             }
         },
-         "sqlPassword": {
+        "sqlPassword": {
             "type": "securestring",
-                "maxLength": 128,
-                        "metadata": {
+            "maxLength": 128,
+            "metadata": {
                 "description": "The sql server admin password."
             }
         },
         "akvUser": {
             "type": "string"
+        },
+        "storageRoleUniqueId": {
+            "defaultValue": "[newGuid()]",
+            "type": "String"
         }
     },
     "variables": {
-        "storageName" : "[concat(toLower(parameters('resourcesBasePrefix')),'storage', substring(uniqueString(resourceGroup().id),0,5))]",
+        "storageName": "[concat(toLower(parameters('resourcesBasePrefix')),'storage', substring(uniqueString(resourceGroup().id),0,5))]",
         "synapseName": "[concat(toLower(parameters('resourcesBasePrefix')),'synapse', substring(uniqueString(resourceGroup().id),0,5))]",
         "keyvaultName": "[concat(toLower(parameters('resourcesBasePrefix')),'akv', substring(uniqueString(resourceGroup().id),0,5))]",
+        "storageBlobDataContributorRoleID": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
     },
     "resources": [
         {
@@ -84,14 +89,17 @@
             },
             "resources": [
                 {
-                  "type": "blobServices/containers",
-                  "apiVersion": "2019-06-01",
-                  "name": "default/synapseadls",
-                  "dependsOn": [
-                    "[variables('storageName')]"
-                  ]
+                    "type": "blobServices/containers",
+                    "apiVersion": "2019-06-01",
+                    "name": "default/synapseadls",
+                    "dependsOn": [
+                        "[variables('storageName')]"
+                    ],
+                    "properties": {
+                        "publicAccess": "None"
+                    }
                 }
-              ]
+            ]
         },
         {
             "type": "Microsoft.Synapse/workspaces",
@@ -163,32 +171,32 @@
                 "enableRbacAuthorization": false,
                 "accessPolicies": [
                     {
-                      "tenantId": "[subscription().tenantId]",
-                      "objectId": "[parameters('akvUser')]",
-                      "permissions": {
-                        "keys": [
-                            "get",
-                            "list",
-                            "update",
-                            "create",
-                            "import",
-                            "delete",
-                            "recover",
-                            "backup",
-                            "restore"
-                        ],
-                        "secrets": [
-                            "get",
-                            "set",
-                            "list",
-                            "delete",
-                            "recover",
-                            "backup",
-                            "restore"
-                        ]
-                      }
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[parameters('akvUser')]",
+                        "permissions": {
+                            "keys": [
+                                "get",
+                                "list",
+                                "update",
+                                "create",
+                                "import",
+                                "delete",
+                                "recover",
+                                "backup",
+                                "restore"
+                            ],
+                            "secrets": [
+                                "get",
+                                "set",
+                                "list",
+                                "delete",
+                                "recover",
+                                "backup",
+                                "restore"
+                            ]
+                        }
                     }
-                  ],
+                ],
                 "tenantId": "[subscription().tenantId]",
                 "sku": {
                     "name": "standard",
@@ -203,20 +211,52 @@
                     "virtualNetworkRules": []
                 }
             }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "storageRoleDeploymentResource",
+            "dependsOn": [
+                "[concat('Microsoft.Synapse/workspaces/', variables('synapseName'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[concat(variables('storageName'), '/Microsoft.Authorization/',  guid(concat(resourceGroup().id, '/', variables('storageBlobDataContributorRoleID'), '/', variables('synapseName'), '/', parameters('storageRoleUniqueId'))))]",
+                            "location": "[resourceGroup().location]",
+                            "properties": {
+                                "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataContributorRoleID'))]",
+                                "principalId": "[reference(concat('Microsoft.Synapse/workspaces/', variables('synapseName')), '2019-06-01-preview', 'Full').identity.principalId]",
+                                "principalType": "ServicePrincipal"
+                            }
+                        }
+                    ]
+                }
+            },
+            "subscriptionId": "[subscription().subscriptionId]",
+            "resourceGroup": "[resourceGroup().name]"
         }
     ],
     "outputs": {
         "synapseName": {
-          "type": "string",
-          "value": "[variables('synapseName')]"
+            "type": "string",
+            "value": "[variables('synapseName')]"
         },
         "storageName": {
-          "type": "string",
-          "value": "[variables('storageName')]"
+            "type": "string",
+            "value": "[variables('storageName')]"
         },
         "keyvaultName": {
             "type": "string",
             "value": "[variables('keyvaultName')]"
-          }
-      }
+        }
+    }
 }
