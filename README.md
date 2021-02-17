@@ -7,5 +7,9 @@ This repo is a collection of a Synapse workspace plus a storage account. It can 
 # Deployment
 The simplest way to deploy this is to simply use the "Deploy to Azure" button below. No kidding! Just plug in some parameters, and the solution does the rest. It includes a sample list of 50 files from the now famous taxi cab dataset that the NYC Taxi and Limousine Commission makes available here: https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
+<<<<<<< HEAD
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fchristophermschmidt%2FSynapseServerlessImporter%2Fdeploy%2Fdeploy%2FDeploy.json)
 
+=======
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://raw.githubusercontent.com/christophermschmidt/SynapseServerlessImporter/dev/armTemplate/template.json?token=ALCNUL4IOIU7S7LEMNAZXYTADG5ZIhttps%3A%2F%2Fraw.githubusercontent.com%2Fchristophermschmidt%2FSynapseServerlessImporter%2Fdev%2FarmTemplate%2Ftemplate.json%3Ftoken%3DALCNUL4IOIU7S7LEMNAZXYTADG5ZI)e
+>>>>>>> 26ce473a764d35324af7e02b0fd1bb155d22ec40
