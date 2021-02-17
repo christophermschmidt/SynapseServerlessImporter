@@ -26,7 +26,6 @@ https://nyc-tlc.s3.amazonaws.com/trip+data/fhvhv_tripdata_2020-06.csv,nyctaxi/fh
 https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-01.csv,nyctaxi/yellow
 https://s3.amazonaws.com/nyc-tlc/trip+data/green_tripdata_2019-01.csv,nyctaxi/green
 https://nyc-tlc.s3.amazonaws.com/trip+data/fhv_tripdata_2019-01.csv,nyctaxi/fhv
-https://nyc-tlc.s3.amazonaws.com/trip+data/fhvhv_tripdata_2019-01.csv,nyctaxi/fhvhv
 https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-02.csv,nyctaxi/yellow
 https://s3.amazonaws.com/nyc-tlc/trip+data/green_tripdata_2019-02.csv,nyctaxi/green
 https://nyc-tlc.s3.amazonaws.com/trip+data/fhv_tripdata_2019-02.csv,nyctaxi/fhv

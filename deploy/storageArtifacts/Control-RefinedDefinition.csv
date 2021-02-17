@@ -26,7 +26,6 @@ nyctaxi/fhvhv,fhvhv_tripdata_2020-06.csv,fhvhv_tripdata_2020_06
 nyctaxi/yellow,yellow_tripdata_2019-01.csv,yellow_tripdata_2019_01
 nyctaxi/green,green_tripdata_2019-01.csv,green_tripdata_2019_01
 nyctaxi/fhv,fhv_tripdata_2019-01.csv,fhv_tripdata_2019_01
-nyctaxi/fhvhv,fhvhv_tripdata_2019-01.csv,fhvhv_tripdata_2019_01
 nyctaxi/yellow,yellow_tripdata_2019-02.csv,yellow_tripdata_2019_02
 nyctaxi/green,green_tripdata_2019-02.csv,green_tripdata_2019_02
 nyctaxi/fhv,fhv_tripdata_2019-02.csv,fhv_tripdata_2019_02
