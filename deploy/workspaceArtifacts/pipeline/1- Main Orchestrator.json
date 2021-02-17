@@ -1,0 +1,43 @@
+{
+	"name": "1- Main Orchestrator",
+	"properties": {
+		"activities": [
+			{
+				"name": "EP - Source Data to ADLS",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "2-HTTP CSV to ADLS CSV",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "EP - Create SQL Serverless Refined Layer",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "EP - Source Data to ADLS",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "3- SQL Serverless Data Layer",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-02-03T23:28:56Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}
