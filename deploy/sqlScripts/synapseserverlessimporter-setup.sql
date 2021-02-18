@@ -14,7 +14,7 @@ DROP EXTERNAL DATA SOURCE [ADLSStorage]
 CREATE EXTERNAL DATA SOURCE [ADLSStorage] 
 WITH 
 	(
-		LOCATION = N'https:/#STORAGENAME#.dfs.core.windows.net/',
+		LOCATION = N'https://#STORAGENAME#.dfs.core.windows.net/synapseadls',
 		CREDENTIAL = [sqlondemand]) --the credential you created earlier
 
 --create the external file formats we need

@@ -1,23 +1,24 @@
 ﻿#configurations - FILL OUT WITH DESIRED VALUES
 $dir = "C:\GitHub\SynapseServerlessImporter\deploy"     #Working directory of where your Deployment.ps1 file is located
-$resourceGroupName = "ssi-rg-test25"                     #Name of Azure resource group to deploy the lab resrouces to, will create if it does not exist
+$resourceGroupName = "ssi-rg-test2"                     #Name of Azure resource group to deploy the lab resrouces to, will create if it does not exist
 $location = "East US 2"                                 #Geo location of resource group, resources will use this as well
 $resourceNamePrefix = "ssi"                             #prefix to append on to unique names such as Synapse Workspace and Storage account
 $subscriptionName = "Visual Studio Premium with MSDN"   #Name of subscription to use for deployment (in case you want to deploy not to your default subscription)
 $serverlessDatabaseName = "synapseServerless"           #Name of Synapse Servless Pool
 
 #Sign-in
-#Connect-AzAccount -UseDeviceAuthentication
+#Clear-AzContext -Force
+#Connect-AzAccount -Subscription $subscriptionName
 
 #set subscription context
 $ctx = Get-AzContext
-
+Set-AzContext -Context $ctx
 #verify RG does not exist
 $RGnotExist = 0
 Get-AzResourceGroup -Name $resourceGroupName -ev RGnotExist -ea 0
 if ($RGnotExist){
     #Create Resource Group
-    New-AzResourceGroup -Name $resourceGroupName -Location $location
+    New-AzResourceGroup -Name $resourceGroupName -Location $location -DefaultProfile $ctx
 }
 else {
     Write-Output "Exiting: RG $resourceGroupName already exists"
@@ -70,7 +71,7 @@ $dbConn.Open()
 # construct command
 $dbCmd = New-Object System.Data.SqlClient.SqlCommand
 $dbCmd.Connection = $dbConn
-$dbCmd.CommandText = "CREATE DATABASE $serverlessDatabaseName"
+$dbCmd.CommandText = "CREATE DATABASE $serverlessDatabaseName collate Latin1_General_100_BIN2_UTF8"
 # execute query
 $dbcmd.ExecuteNonQuery()
 $dbConn.Close()

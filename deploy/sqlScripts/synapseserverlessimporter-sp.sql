@@ -1,7 +1,4 @@
---finally, let's create our dynamic stored procedure. The below parameterizes the table name, sink, and source, and writes the raw csv as an optimized parquet file for querying through serverless
-
---now, creating a regular old external table is boring! whatwe want to do is dynamically generate this based on an input parameter to handle the latest arriving data
-CREATE OR ALTER PROCEDURE dbo.uspExternalTblCreate
+CREATE   PROCEDURE [dbo].[uspExternalTblCreate]
 (
 	@sinkTableName NVARCHAR(500) 
 	,@sourceDataFile NVARCHAR(500)
@@ -49,7 +46,8 @@ BEGIN
 	--combine the sink table name and the new cleaned time stamp to create the external table in Synapse
 	SET @fullsinkTableName = @sinkTableName
 	--create the full source file path by combing the source file path, file name pattern, and the RAW input time stamp along with the file extension (hard coded to csv) to create the final file. for example: s3.amazonaws.com/trip+data/yellow_tripdata_2019-01.csv
-	SET @fullSourceFilePath = @sourceDataFolder + @sourceDataFile + '.csv'
+	SET @fullSourceFilePath = 'raw/'+@sourceDataFolder +'/'+ @sourceDataFile
+	SET @fulllocation = 'refined/'+@sourceDataFolder + '/'+ @sinkTableName + '.parquet'
 
 	--create the parameterized sql statement
 	SET @sql = '
@@ -58,7 +56,7 @@ BEGIN
 
 
 		CREATE EXTERNAL TABLE ' + QUOTENAME(@fullsinkTableName) + ' WITH 
-		(DATA_SOURCE = ''ADLSStorage'', LOCATION = N''' + @fulllocation + ''',FILE_FORMAT = ''Parquet'')
+		(DATA_SOURCE = [ADLSStorage], LOCATION = N''' + @fulllocation + ''',FILE_FORMAT = [ParquetFF])
 		AS
 		SELECT *
 		FROM OPENROWSET(

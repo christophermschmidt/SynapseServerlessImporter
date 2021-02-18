@@ -56,6 +56,7 @@
 						"value": "@activity('LKP Control File').output.value",
 						"type": "Expression"
 					},
+					"batchCount": 5,
 					"activities": [
 						{
 							"name": "SP Build Refined Serverless Layer",
