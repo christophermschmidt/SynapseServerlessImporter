@@ -7,8 +7,8 @@ $subscriptionName = "Visual Studio Premium with MSDN"   #Name of subscription to
 $serverlessDatabaseName = "synapseServerless"           #Name of Synapse Servless Pool
 
 #Sign-in
-#Clear-AzContext -Force
-#Connect-AzAccount -Subscription $subscriptionName
+Clear-AzContext -Force
+Connect-AzAccount -Subscription $subscriptionName
 
 #set subscription context
 $ctx = Get-AzContext
