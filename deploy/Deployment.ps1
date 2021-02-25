@@ -6,6 +6,9 @@ $resourceNamePrefix = "ssi"                             #prefix to append on to 
 $subscriptionName = "Visual Studio Premium with MSDN"   #Name of subscription to use for deployment (in case you want to deploy not to your default subscription)
 $serverlessDatabaseName = "synapseServerless"           #Name of Synapse Servless Pool
 
+#install Az Synapse module
+Install-Module -Name "Az.Synapse" -MinimumVersion 0.7.0 -Force
+
 #Sign-in
 Clear-AzContext -Force
 Connect-AzAccount -Subscription $subscriptionName
